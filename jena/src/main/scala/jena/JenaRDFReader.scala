@@ -7,7 +7,6 @@ import com.hp.hpl.jena.graph.{ Triple => JenaTriple, Node => JenaNode, _ }
 import scala.util._
 import org.apache.jena.riot._
 import org.apache.jena.riot.system._
-import JenaOperations.xsdString
 
 class TripleSink() extends StreamRDF {
 
@@ -33,7 +32,7 @@ class TripleSink() extends StreamRDF {
         new JenaTriple(
           triple.getSubject,
           triple.getPredicate,
-          NodeFactory.createLiteral(o.getLiteralLexicalForm.toString, null, xsdString))
+          NodeFactory.createLiteral(o.getLiteralLexicalForm.toString, "", null))
       else
         // otherwise everything is fine
         triple

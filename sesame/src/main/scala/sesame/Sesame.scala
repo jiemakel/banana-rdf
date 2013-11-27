@@ -17,6 +17,7 @@ trait Sesame extends RDF {
   type URI = SesameURI
   type BNode = SesameBNode
   type Literal = SesameLiteral
+  type PlainLiteral = SesameLiteral
   type TypedLiteral = SesameLiteral
   type LangLiteral = SesameLiteral
   type Lang = String

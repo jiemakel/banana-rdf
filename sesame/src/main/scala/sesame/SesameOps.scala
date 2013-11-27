@@ -41,8 +41,8 @@ object SesameOperations extends RDFOps[Sesame] {
   // node
 
   def foldNode[T](node: Sesame#Node)(funURI: Sesame#URI => T, funBNode: Sesame#BNode => T, funLiteral: Sesame#Literal => T): T = node match {
-    case iri: Sesame#URI => funURI(iri)
-    case bnode: Sesame#BNode => funBNode(bnode)
+    case iri: Sesame#URI         => funURI(iri)
+    case bnode: Sesame#BNode     => funBNode(bnode)
     case literal: Sesame#Literal => funLiteral(literal)
   }
 
@@ -69,24 +69,23 @@ object SesameOperations extends RDFOps[Sesame] {
 
   }
 
-
-//    try {
-//      valueFactory.createURI(iriStr).asInstanceOf[Sesame#URI]
-//    } catch {
-//      case e: Exception =>
-//        if (iriStr.nonEmpty && iriStr.charAt(0) == '#')
-//          new URI {
-//            override def equals(o: Any): Boolean = o.isInstanceOf[URI] && o.asInstanceOf[URI].toString == this.toString
-//            def getLocalName: String = iriStr
-//            def getNamespace: String = ""
-//            override def hashCode: Int = iriStr.hashCode
-//            override def toString: String = iriStr
-//            def stringValue: String = iriStr
-//          }
-//        else {
-//          throw e
-//        }
-//    }
+  //    try {
+  //      valueFactory.createURI(iriStr).asInstanceOf[Sesame#URI]
+  //    } catch {
+  //      case e: Exception =>
+  //        if (iriStr.nonEmpty && iriStr.charAt(0) == '#')
+  //          new URI {
+  //            override def equals(o: Any): Boolean = o.isInstanceOf[URI] && o.asInstanceOf[URI].toString == this.toString
+  //            def getLocalName: String = iriStr
+  //            def getNamespace: String = ""
+  //            override def hashCode: Int = iriStr.hashCode
+  //            override def toString: String = iriStr
+  //            def stringValue: String = iriStr
+  //          }
+  //        else {
+  //          throw e
+  //        }
+  //    }
 
   def fromUri(node: Sesame#URI): String = node.toString
 
@@ -100,12 +99,19 @@ object SesameOperations extends RDFOps[Sesame] {
 
   // literal
 
-  def foldLiteral[T](literal: Sesame#Literal)(funTL: Sesame#TypedLiteral => T, funLL: Sesame#LangLiteral => T): T =
+  def foldLiteral[T](literal: Sesame#Literal)(funPL: Sesame#PlainLiteral => T, funTL: Sesame#TypedLiteral => T, funLL: Sesame#LangLiteral => T): T =
     literal match {
-      case typedLiteral: Sesame#TypedLiteral if literal.getLanguage == null || literal.getLanguage.isEmpty =>
+      case typedLiteral: Sesame#TypedLiteral if literal.getDatatype != null =>
         funTL(typedLiteral)
-      case langLiteral: Sesame#LangLiteral => funLL(langLiteral)
+      case langLiteral: Sesame#LangLiteral if literal.getLanguage() != null => funLL(langLiteral)
+      case plainLiteral: Sesame#PlainLiteral                                => funPL(plainLiteral)
     }
+
+  // plain literal
+
+  def makePlainLiteral(lexicalForm: String): Sesame#PlainLiteral = new LiteralImpl(lexicalForm)
+
+  def fromPlainLiteral(plainLiteral: Sesame#PlainLiteral): String = plainLiteral.getLabel
 
   // typed literal
 
@@ -114,12 +120,9 @@ object SesameOperations extends RDFOps[Sesame] {
   def fromTypedLiteral(typedLiteral: Sesame#TypedLiteral): (String, Sesame#URI) = {
     val lexicalForm = typedLiteral.getLabel
     val typ = typedLiteral.getDatatype
-    if (typedLiteral.getLanguage == null) {
-      if (typ != null)
-        (lexicalForm, typ)
-      else
-        (lexicalForm, makeUri("http://www.w3.org/2001/XMLSchema#string"))
-    } else {
+    if (typ != null)
+      (lexicalForm, typ)
+    else {
       throw new RuntimeException("fromTypedLiteral: " + typedLiteral.toString() + " must be a TypedLiteral")
     }
   }
@@ -133,10 +136,7 @@ object SesameOperations extends RDFOps[Sesame] {
 
   def fromLangLiteral(langLiteral: Sesame#LangLiteral): (String, Sesame#Lang) = {
     val l = langLiteral.getLanguage
-    if (l != null && l != "")
-      (langLiteral.getLabel, makeLang(l))
-    else
-      throw new RuntimeException("fromLangLiteral: " + langLiteral.toString() + " must be a LangLiteral")
+    (langLiteral.getLabel, makeLang(l))
   }
 
   // lang
@@ -193,10 +193,11 @@ object SesameOperations extends RDFOps[Sesame] {
 
   // graph isomorphism
 
-  /** the new ModelUtil.equals changed its semantics. See 
-    * - https://openrdf.atlassian.net/browse/SES-1695
-    * - https://groups.google.com/forum/#!topic/sesame-devel/CGFDn7mESLg/discussion
-    */
+  /**
+   * the new ModelUtil.equals changed its semantics. See
+   * - https://openrdf.atlassian.net/browse/SES-1695
+   * - https://groups.google.com/forum/#!topic/sesame-devel/CGFDn7mESLg/discussion
+   */
   def isomorphism(left: Sesame#Graph, right: Sesame#Graph): Boolean = {
     val leftNoContext = left.asScala.map(s => makeTriple(s.getSubject, s.getPredicate, s.getObject)).asJava
     val rightNoContext = right.asScala.map(s => makeTriple(s.getSubject, s.getPredicate, s.getObject)).asJava

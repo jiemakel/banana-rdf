@@ -15,17 +15,6 @@ object FromTypedLiteral {
     def fromTypedLiteral(tl: Rdf#TypedLiteral): Try[Rdf#TypedLiteral] = Success(tl)
   }
 
-  implicit def StringFromTypedLiteral[Rdf <: RDF](implicit ops: RDFOps[Rdf]) = new FromTypedLiteral[Rdf, String] {
-    import ops._
-    def fromTypedLiteral(tl: Rdf#TypedLiteral): Try[String] = {
-      val TypedLiteral(lexicalForm, datatype) = tl
-      if (datatype == xsd.string)
-        Success(lexicalForm)
-      else
-        Failure(FailedConversion(s"${tl} is not an xsd:string"))
-    }
-  }
-
   implicit def BooleanFromTypedLiteral[Rdf <: RDF](implicit ops: RDFOps[Rdf]) = new FromTypedLiteral[Rdf, Boolean] {
     import ops._
     def fromTypedLiteral(tl: Rdf#TypedLiteral): Try[Boolean] = {

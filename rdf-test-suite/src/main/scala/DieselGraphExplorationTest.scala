@@ -8,7 +8,7 @@ import org.scalatest.EitherValues._
 import scala.util._
 
 abstract class DieselGraphExplorationTest[Rdf <: RDF]()(implicit ops: RDFOps[Rdf])
-    extends WordSpec with Matchers {
+  extends WordSpec with Matchers {
 
   import ops._
 
@@ -23,9 +23,7 @@ abstract class DieselGraphExplorationTest[Rdf <: RDF]()(implicit ops: RDFOps[Rdf
     -- foaf.knows ->- (
       URI("http://bblfish.net/#hjs").a(foaf.Person)
       -- foaf.name ->- "Henry Story"
-      -- foaf.currentProject ->- URI("http://webid.info/")
-    )
-  )
+      -- foaf.currentProject ->- URI("http://webid.info/")))
 
   "'/' method must traverse the graph" in {
     val names = betehess / foaf.name
@@ -36,7 +34,7 @@ abstract class DieselGraphExplorationTest[Rdf <: RDF]()(implicit ops: RDFOps[Rdf
 
     val name = betehess / foaf.knows / foaf.name
 
-    name.head.pointer should be(TypedLiteral("Henry Story"))
+    name.head.pointer should be(PlainLiteral("Henry Story"))
 
   }
 
@@ -109,7 +107,7 @@ abstract class DieselGraphExplorationTest[Rdf <: RDF]()(implicit ops: RDFOps[Rdf
 
     val persons = betehess.graph.getAllInstancesOf(foaf.Person).nodes
 
-    persons.toSet should be (Set(URI("http://bertails.org/#betehess"), URI("http://bblfish.net/#hjs")))
+    persons.toSet should be(Set(URI("http://bertails.org/#betehess"), URI("http://bblfish.net/#hjs")))
 
   }
 

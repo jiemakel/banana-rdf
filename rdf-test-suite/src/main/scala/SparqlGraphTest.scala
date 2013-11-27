@@ -131,7 +131,7 @@ class SparqlGraphTest[Rdf <: RDF, SyntaxType]()(
                            |
                            |ASK {
                            |  ?thing :editor ?ed .
-                           |  ?ed contact:fullName "Alexandre Bertails"^^xsd:string .
+                           |  ?ed contact:fullName "Alexandre Bertails" .
                            |}""".stripMargin)
 
     "Alexandre Bertails must appear as an editor in new-tr.rdf" in { //was: taggedAs (SesameWIP)

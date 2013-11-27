@@ -46,13 +46,22 @@ trait RDFDSL[Rdf <: RDF] { this: RDFOps[Rdf] =>
 
   // typed literal
 
-  trait TypedLiteralCompanionObject extends Function2[String, Rdf#URI, Rdf#TypedLiteral] with Function1[String, Rdf#TypedLiteral] {
+  trait TypedLiteralCompanionObject extends Function2[String, Rdf#URI, Rdf#TypedLiteral] {
     def unapply(tl: Rdf#TypedLiteral): Option[(String, Rdf#URI)] = Some(fromTypedLiteral(tl))
     def apply(lexicalForm: String, datatype: Rdf#URI): Rdf#TypedLiteral = makeTypedLiteral(lexicalForm, datatype)
-    def apply(lexicalForm: String): Rdf#TypedLiteral = makeTypedLiteral(lexicalForm, makeUri("http://www.w3.org/2001/XMLSchema#string"))
+
   }
 
   object TypedLiteral extends TypedLiteralCompanionObject
+
+  // plain literal
+
+  trait PlainLiteralCompanionObject extends Function1[String, Rdf#PlainLiteral] {
+    def apply(lexicalForm: String): Rdf#PlainLiteral = makePlainLiteral(lexicalForm)
+    def unapply(pl: Rdf#PlainLiteral): Option[String] = Some(fromPlainLiteral(pl))
+  }
+
+  object PlainLiteral extends PlainLiteralCompanionObject
 
   // lang literal
 

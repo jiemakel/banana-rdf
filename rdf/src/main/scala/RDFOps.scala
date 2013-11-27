@@ -14,9 +14,9 @@ object RDFOps {
  *   - we allow literals in subject position
  */
 trait RDFOps[Rdf <: RDF]
-    extends RDFDSL[Rdf]
-    with CommonPrefixes[Rdf]
-    with syntax.Syntax[Rdf] {
+  extends RDFDSL[Rdf]
+  with CommonPrefixes[Rdf]
+  with syntax.Syntax[Rdf] {
 
   // graph
 
@@ -36,7 +36,7 @@ trait RDFOps[Rdf <: RDF]
 
   def foldNode[T](node: Rdf#Node)(funURI: Rdf#URI => T, funBNode: Rdf#BNode => T, funLiteral: Rdf#Literal => T): T
 
-  def isURI[T](node: Rdf#Node) = foldNode[Boolean](node)(uri=>true, bn=>false,lit=>false)
+  def isURI[T](node: Rdf#Node) = foldNode[Boolean](node)(uri => true, bn => false, lit => false)
 
   // URI
 
@@ -54,7 +54,13 @@ trait RDFOps[Rdf <: RDF]
 
   // literal
 
-  def foldLiteral[T](literal: Rdf#Literal)(funTL: Rdf#TypedLiteral => T, funLL: Rdf#LangLiteral => T): T
+  def foldLiteral[T](literal: Rdf#Literal)(funPL: Rdf#PlainLiteral => T, funTL: Rdf#TypedLiteral => T, funLL: Rdf#LangLiteral => T): T
+
+  // plain literal
+
+  def makePlainLiteral(lexicalForm: String): Rdf#PlainLiteral
+
+  def fromPlainLiteral(pl: Rdf#PlainLiteral): String
 
   // typed literal
 
@@ -92,8 +98,8 @@ trait RDFOps[Rdf <: RDF]
   // graph isomorphism
   def isomorphism(left: Rdf#Graph, right: Rdf#Graph): Boolean
 
-//  implicit def sparqlSolutionSyntax(solution: Rdf#Solution): syntax.SparqlSolutionSyntax[Rdf] = new syntax.SparqlSolutionSyntax[Rdf](solution)
-//
-//  implicit def sparqlSolutionsSyntax(solutions: Rdf#Solutions): syntax.SparqlSolutionsSyntax[Rdf] = new syntax.SparqlSolutionsSyntax[Rdf](solutions)
+  //  implicit def sparqlSolutionSyntax(solution: Rdf#Solution): syntax.SparqlSolutionSyntax[Rdf] = new syntax.SparqlSolutionSyntax[Rdf](solution)
+  //
+  //  implicit def sparqlSolutionsSyntax(solutions: Rdf#Solutions): syntax.SparqlSolutionsSyntax[Rdf] = new syntax.SparqlSolutionsSyntax[Rdf](solutions)
 
 }

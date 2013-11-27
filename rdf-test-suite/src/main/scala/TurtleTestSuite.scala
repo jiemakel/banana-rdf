@@ -7,7 +7,7 @@ import java.io._
 import org.scalatest.EitherValues._
 
 abstract class TurtleTestSuite[Rdf <: RDF]()(implicit ops: RDFOps[Rdf])
-    extends WordSpec with Matchers {
+  extends WordSpec with Matchers {
 
   val reader: RDFReader[Rdf, Turtle]
   val writer: RDFWriter[Rdf, Turtle]
@@ -19,14 +19,13 @@ abstract class TurtleTestSuite[Rdf <: RDF]()(implicit ops: RDFOps[Rdf])
     val ntriples = prefix("ntriples/")
     val creator = URI("http://purl.org/dc/elements/1.1/creator")
     val publisher = URI("http://purl.org/dc/elements/1.1/publisher")
-    val dave = TypedLiteral("Dave Beckett")
-    val art = TypedLiteral("Art Barstow")
+    val dave = PlainLiteral("Dave Beckett")
+    val art = PlainLiteral("Art Barstow")
     val w3org = URI("http://www.w3.org/")
     Graph(
       Triple(ntriples, creator, dave),
       Triple(ntriples, creator, art),
-      Triple(ntriples, publisher, w3org)
-    )
+      Triple(ntriples, publisher, w3org))
   }
 
   val rdfCore = "http://www.w3.org/2001/sw/RDFCore/"

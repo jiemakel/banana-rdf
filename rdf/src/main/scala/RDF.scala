@@ -8,6 +8,7 @@ trait RDF {
   type URI <: Node
   type BNode <: Node
   type Literal <: Node
+  type PlainLiteral <: Literal
   type TypedLiteral <: Literal
   type LangLiteral <: Literal
   type Lang

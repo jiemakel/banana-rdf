@@ -15,12 +15,6 @@ object ToTypedLiteral {
     def toTypedLiteral(tl: Rdf#TypedLiteral): Rdf#TypedLiteral = tl
   }
 
-  implicit def StringToTypedLiteral[Rdf <: RDF](implicit ops: RDFOps[Rdf]) =
-    new ToTypedLiteral[Rdf, String] {
-      import ops._
-      def toTypedLiteral(s: String): Rdf#TypedLiteral = TypedLiteral(s, xsd.string)
-    }
-
   implicit def BooleanToTypedLiteral[Rdf <: RDF](implicit ops: RDFOps[Rdf]) =
     new ToTypedLiteral[Rdf, Boolean] {
       import ops._

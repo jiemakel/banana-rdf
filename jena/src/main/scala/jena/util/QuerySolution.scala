@@ -20,11 +20,10 @@ case class QuerySolution() {
     { case BNode(label) => modelForBindings.createResource(AnonId.create(label)) },
     { literal =>
       foldLiteral(literal) (
+        { case PlainLiteral(lexicalForm) => modelForBindings.createLiteral(lexicalForm) },
         { case TypedLiteral(lexicalForm, URI(datatype)) => modelForBindings.createTypedLiteral(lexicalForm, typeMapper.getSafeTypeByName(datatype)) },
-        { case LangLiteral(lexicalForm, Lang(lang)) => modelForBindings.createLiteral(lexicalForm, lang) }
-      )
-    }
-  )
+        { case LangLiteral(lexicalForm, Lang(lang)) => modelForBindings.createLiteral(lexicalForm, lang) })
+    })
 
   def getMap(bindings: Map[String, Jena#Node]): JenaQuerySolution = {
     val map = new QuerySolutionMap()

@@ -137,7 +137,7 @@ class SparqlEngineTest[Rdf <: RDF](
                         |ASK {
                         |  graph <http://example.com/graph> {
                         |    ?thing :editor ?ed .
-                        |    ?ed contact:fullName "Alexandre Bertails"^^xsd:string
+                        |    ?ed contact:fullName "Alexandre Bertails"
                         |  }
                         |}""".stripMargin)
 
@@ -201,7 +201,7 @@ class SparqlEngineTest[Rdf <: RDF](
 //        | }
 //        |} WHERE {
 //        | GRAPH <http://example.com/graph2> {
-//        |   ?author foaf:name "Henry Story"^^xsd:string
+//        |   ?author foaf:name "Henry Story"
 //        | }
 //        |}
 //      """.stripMargin
@@ -216,7 +216,7 @@ class SparqlEngineTest[Rdf <: RDF](
 //        |SELECT ?currentProject
 //        |WHERE {
 //        | GRAPH <http://example.com/graph2> {
-//        |   ?author foaf:name "Henry Story"^^xsd:string .
+//        |   ?author foaf:name "Henry Story" .
 //        |   ?author foaf:currentProject ?currentProject
 //        | }
 //        |}

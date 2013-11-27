@@ -4,8 +4,8 @@ package org.w3.banana
  * class of Transformers between different RDF frameworks
  */
 class RDFTransformer[A <: RDF, B <: RDF](
-    val a: RDFOps[A],
-    val b: RDFOps[B]) {
+  val a: RDFOps[A],
+  val b: RDFOps[B]) {
 
   def transform(graph: A#Graph): B#Graph =
     b.makeGraph(a.graphToIterable(graph) map transformTriple)
@@ -22,10 +22,13 @@ class RDFTransformer[A <: RDF, B <: RDF](
   def transformNode(node: A#Node): B#Node = a.foldNode(node)(
     uri => b.makeUri(a.fromUri(uri)),
     bnode => b.makeBNodeLabel(a.fromBNode(bnode)),
-    literal => transformLiteral(literal)
-  )
+    literal => transformLiteral(literal))
 
   def transformLiteral(literal: A#Literal): B#Literal = a.foldLiteral(literal)(
+    pl => {
+      val lexicalForm = a.fromPlainLiteral(pl)
+      b.makePlainLiteral(lexicalForm)
+    },
     tl => {
       val (lexicalForm, datatypeUri) = a.fromTypedLiteral(tl)
       val datatype = a.fromUri(datatypeUri)
@@ -35,7 +38,6 @@ class RDFTransformer[A <: RDF, B <: RDF](
       val (lexicalForm, lang) = a.fromLangLiteral(ll)
       val langString = a.fromLang(lang)
       b.makeLangLiteral(lexicalForm, b.makeLang(langString))
-    }
-  )
+    })
 
 }

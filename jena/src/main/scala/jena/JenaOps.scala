@@ -81,18 +81,24 @@ object JenaOperations extends RDFOps[Jena] {
     mapper.getTypeByName(iriString)
   }
 
-  protected [jena] val xsdString = mapper.getTypeByName("http://www.w3.org/2001/XMLSchema#string")
-//  protected [jena] val langString = jenaDatatype("http://www.w3.org/1999/02/22-rdf-syntax-ns#langString")
+  //  protected [jena] val langString = jenaDatatype("http://www.w3.org/1999/02/22-rdf-syntax-ns#langString")
 
   /**
    * LangLiteral are not different types in Jena
    * we can discriminate on the lang tag presence
    */
-  def foldLiteral[T](literal: Jena#Literal)(funTL: Jena#TypedLiteral => T, funLL: Jena#LangLiteral => T): T = literal match {
-    case typedLiteral: Jena#TypedLiteral if literal.getLiteralLanguage == null || literal.getLiteralLanguage.isEmpty =>
+  def foldLiteral[T](literal: Jena#Literal)(funPL: Jena#PlainLiteral => T, funTL: Jena#TypedLiteral => T, funLL: Jena#LangLiteral => T): T = literal match {
+    case typedLiteral: Jena#TypedLiteral if literal.getLiteralDatatype != null =>
       funTL(typedLiteral)
-    case langLiteral: Jena#LangLiteral => funLL(langLiteral)
+    case langLiteral: Jena#LangLiteral if !literal.getLiteralLanguage.isEmpty => funLL(langLiteral)
+    case plainLiteral: Jena#PlainLiteral                                      => funPL(plainLiteral)
   }
+
+  // plain literal
+
+  def makePlainLiteral(lexicalForm: String): Jena#PlainLiteral = NodeFactory.createLiteral(lexicalForm, "", null).asInstanceOf[Node_Literal]
+
+  def fromPlainLiteral(pl: Jena#PlainLiteral): String = pl.getLiteralLexicalForm()
 
   // typed literal
 
@@ -104,8 +110,6 @@ object JenaOperations extends RDFOps[Jena] {
     val typ = typedLiteral.getLiteralDatatype
     if (typ != null)
       (typedLiteral.getLiteralLexicalForm.toString, makeUri(typ.getURI))
-    else if (typedLiteral.getLiteralLanguage.isEmpty)
-      (typedLiteral.getLiteralLexicalForm.toString, makeUri("http://www.w3.org/2001/XMLSchema#string"))
     else
       throw new RuntimeException("fromTypedLiteral: " + typedLiteral.toString() + " must be a TypedLiteral")
   }
@@ -119,10 +123,7 @@ object JenaOperations extends RDFOps[Jena] {
 
   def fromLangLiteral(langLiteral: Jena#LangLiteral): (String, Jena#Lang) = {
     val l = langLiteral.getLiteralLanguage
-    if (l != "")
-      (langLiteral.getLiteralLexicalForm.toString, makeLang(l))
-    else
-      throw new RuntimeException("fromLangLiteral: " + langLiteral.toString() + " must be a LangLiteral")
+    (langLiteral.getLiteralLexicalForm.toString, makeLang(l))
   }
 
   // lang

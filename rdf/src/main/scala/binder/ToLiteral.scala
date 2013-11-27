@@ -12,6 +12,10 @@ object ToLiteral {
     def toLiteral(t: Rdf#Literal): Rdf#Literal = t
   }
 
+  implicit def ToPlainLiteralToLiteral[Rdf <: RDF, T](implicit to: ToPlainLiteral[Rdf, T]) = new ToLiteral[Rdf, T] {
+    def toLiteral(t: T): Rdf#Literal = to.toPlainLiteral(t)
+  }
+
   implicit def ToTypedLiteralToLiteral[Rdf <: RDF, T](implicit to: ToTypedLiteral[Rdf, T]) = new ToLiteral[Rdf, T] {
     def toLiteral(t: T): Rdf#Literal = to.toTypedLiteral(t)
   }

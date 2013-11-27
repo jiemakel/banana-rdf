@@ -32,6 +32,10 @@ object `Does it compile?` {
 
   def bar[Rdf <: RDF](implicit ops: RDFOps[Rdf]): Unit = {
 
+    implicitly[PlainLiteralBinder[Rdf, Rdf#PlainLiteral]]
+
+    implicitly[PGBinder[Rdf, Rdf#PlainLiteral]]
+
     implicitly[TypedLiteralBinder[Rdf, Rdf#TypedLiteral]]
 
     implicitly[PGBinder[Rdf, Rdf#TypedLiteral]]
