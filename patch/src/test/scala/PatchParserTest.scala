@@ -9,13 +9,13 @@ abstract class PatchParserTest[Rdf <: RDF]()(implicit ops: RDFOps[Rdf]) extends 
   import ops._
 
   "parse variable" in {
-    val parser = new PCPatchParser[Rdf]
+    val parser = new PatchParserCombinator[Rdf]
     val v = parser.parse(parser.varr, new StringReader("?foo"))
     v.get should be (Var("foo"))
   }
 
   "parse literal" in {
-    val parser = new PCPatchParser[Rdf](prefixes = Map(xsd.prefixName -> xsd.prefixIri))
+    val parser = new PatchParserCombinator[Rdf](prefixes = Map(xsd.prefixName -> xsd.prefixIri))
     parser.parse(parser.literal, new StringReader("4")).get should be(TypedLiteral("4", xsd.integer))
     parser.parse(parser.literal, new StringReader(""""foo"""")).get should be(TypedLiteral("foo", xsd.string))
     parser.parse(parser.literal, new StringReader(""""foo"^^xsd:string""")).get should be(TypedLiteral("foo", xsd.string))
@@ -23,13 +23,13 @@ abstract class PatchParserTest[Rdf <: RDF]()(implicit ops: RDFOps[Rdf]) extends 
   }
 
   "parse qname or uri" in {
-    val parser = new PCPatchParser[Rdf](prefixes = Map(xsd.prefixName -> xsd.prefixIri))
+    val parser = new PatchParserCombinator[Rdf](prefixes = Map(xsd.prefixName -> xsd.prefixIri))
     parser.parse(parser.qnameORuri, new StringReader("""<http://example.com>""")).get should be(URI("http://example.com"))
     parser.parse(parser.qnameORuri, new StringReader("""xsd:foo""")).get should be(xsd("foo"))
   }
 
   "parse patch query" in {
-    val parser = new PCPatchParser[Rdf]
+    val parser = new PatchParserCombinator[Rdf]
     val query = """
 BASE http://example.com/
 DELETE {
@@ -45,17 +45,17 @@ WHERE {
 """
     val parsed = parser.parse(parser.patch, new StringReader(query)).get
     val expected =
-      LDPPatch(
-        Some(Delete(TriplesBlock(Vector(TriplePattern(Term(URI("http://example.com/a")),URI("http://example.com/b"),Var("o")))))),
-        Some(Insert(TriplesBlock(Vector(TriplePattern(Var("s"),URI("http://example.com/b"),Term(URI("http://example.com/c"))))))),
+      Patch(
+        Some(Delete(TriplesPattern(Vector(TriplePattern(Term(URI("http://example.com/a")),IRIRef(URI("http://example.com/b")),Var("o")))))),
+        Some(Insert(TriplesPattern(Vector(TriplePattern(Var("s"),IRIRef(URI("http://example.com/b")),Term(URI("http://example.com/c"))))))),
         Some(Where(TriplesBlock(Vector(
-          TriplePattern(Var("s"),URI("http://example.com/b"),Var("o")),
-          TriplePattern(Var("o"),URI("http://example.com/b"),Var("z")))))))
+          TriplePath(Var("s"),IRIRef(URI("http://example.com/b")),Var("o")),
+          TriplePath(Var("o"),IRIRef(URI("http://example.com/b")),Var("z")))))))
     parsed should be(expected)
   }
 
   "parse patch query with prefixes" in {
-    val parser = new PCPatchParser[Rdf]
+    val parser = new PatchParserCombinator[Rdf]
     val query = """
 BASE http://example.com/
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
@@ -72,15 +72,85 @@ WHERE {
 """
     val parsed = parser.parse(parser.patch, new StringReader(query)).get
     val expected =
-      LDPPatch(
-        Some(Delete(TriplesBlock(Vector(TriplePattern(Term(URI("http://example.com/a")),URI("http://xmlns.com/foaf/0.1/b"),Var("o")))))),
-        Some(Insert(TriplesBlock(Vector(TriplePattern(Var("s"),URI("http://xmlns.com/foaf/0.1/b"),Term(URI("http://example.com/c"))))))),
+      Patch(
+        Some(Delete(TriplesPattern(Vector(TriplePattern(Term(URI("http://example.com/a")),IRIRef(URI("http://xmlns.com/foaf/0.1/b")),Var("o")))))),
+        Some(Insert(TriplesPattern(Vector(TriplePattern(Var("s"),IRIRef(URI("http://xmlns.com/foaf/0.1/b")),Term(URI("http://example.com/c"))))))),
         Some(Where(TriplesBlock(Vector(
-          TriplePattern(Var("s"),URI("http://example.com/b"),Var("o")),
-          TriplePattern(Var("o"),URI("http://example.com/b"),Var("z")))))))
+          TriplePath(Var("s"),IRIRef(URI("http://example.com/b")),Var("o")),
+          TriplePath(Var("o"),IRIRef(URI("http://example.com/b")),Var("z")))))))
     parsed should be(expected)
   }
 
+  "parse patch query with path predicates" in {
+    val parser = new PatchParserCombinator[Rdf]
+    val query = """
+BASE http://example.com/
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+DELETE {
+  <a> foaf:b ?o
+}
+WHERE {
+  ?s <a>/foaf:b/<http://example.com/c> ?o .
+  ?o <b> ?z
+}
+"""
+    val parsed = parser.parse(parser.patch, new StringReader(query)).get
+    val expected =
+      Patch(
+        Some(Delete(TriplesPattern(Vector(TriplePattern(Term(URI("http://example.com/a")),IRIRef(URI("http://xmlns.com/foaf/0.1/b")),Var("o")))))),
+        None,
+        Some(Where(TriplesBlock(Vector(
+          TriplePath(Var("s"),Path(List(URI("http://example.com/a"), URI("http://xmlns.com/foaf/0.1/b"), URI("http://example.com/c"))),Var("o")),
+          TriplePath(Var("o"),IRIRef(URI("http://example.com/b")),Var("z")))))))
+    parsed should be(expected)
+  }
+
+  "all variables under the DELETE clause must be bound in the WHERE clause" in {
+    val parser = new PatchParserCombinator[Rdf]
+    val query = """
+DELETE {
+  ?foo <blah> ?o
+}
+WHERE {
+  [] <blah> ?o
+}
+"""
+    intercept[AssertionError] {
+      parser.parse(parser.patch, new StringReader(query)).get
+    }
+  }
+
+  "the BGP in the WHERE clause must be a Tree pattern -- disconnected trees" in {
+    val parser = new PatchParserCombinator[Rdf]
+    val query = """
+DELETE {
+  <a> <b> <c>
+}
+WHERE {
+  ?a <p> "foo" .
+  ?b <q> "bar"
+}
+"""
+    intercept[AssertionError] {
+      parser.parse(parser.patch, new StringReader(query)).get
+    }
+  }
+
+  "the BGP in the WHERE clause must be a Tree pattern -- tree with 2 subjects" in {
+    val parser = new PatchParserCombinator[Rdf]
+    val query = """
+DELETE {
+  <a> <b> <c>
+}
+WHERE {
+  ?a <p> ?c .
+  ?b <q> ?c
+}
+"""
+    intercept[AssertionError] {
+      parser.parse(parser.patch, new StringReader(query)).get
+    }
+  }
 
 }
 
